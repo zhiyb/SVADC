@@ -60,8 +60,8 @@ set_global_assignment -name OPTIMIZATION_MODE "AGGRESSIVE PERFORMANCE"
 set_global_assignment -name AUTO_DELAY_CHAINS_FOR_HIGH_FANOUT_INPUT_PINS ON
 
 set_global_assignment -name QII_AUTO_PACKED_REGISTERS AUTO
-set_global_assignment -name QIP_FILE peripheral/adc_ram.qip
-set_global_assignment -name QIP_FILE peripheral/adc_fifo.qip
+set_global_assignment -name QIP_FILE display/display_ram.qip
+set_global_assignment -name SYSTEMVERILOG_FILE display/display_samples.sv
 set_global_assignment -name SYSTEMVERILOG_FILE peripheral/adc.sv
 set_global_assignment -name SYSTEMVERILOG_FILE structural/arbiter_sync_pri.sv
 set_global_assignment -name SYSTEMVERILOG_FILE structural/arbiter_interface.sv

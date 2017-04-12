@@ -27,16 +27,16 @@ module wrapper (
 );
 
 // Clocks
-logic clk10M, clk36M, clk50M, clk90M, clk180M, clk300M;
+logic clk36M, clk80M, clk50M, clk90M, clk240M, clk360M;
 assign clk50M = CLOCK_50;
 pll pll0 (.inclk0(clk50M), .locked(),
-	.c0(clk10M), .c1(clk36M), .c2(clk90M), .c3(clk180M), .c4(clk300M));
+	.c0(clk80M), .c1(clk36M), .c2(clk90M), .c3(clk360M), .c4(clk240M));
 
 logic clkSYS, clkSDRAM, clkTFT, clkADC;
 //assign clkSYS = clk300M;
 assign clkSDRAM = clk90M;
 assign clkTFT = clk36M;
-assign clkADC = clk50M;
+assign clkADC = clk80M;
 
 // Reset control
 logic n_reset;
@@ -52,22 +52,22 @@ end
 `ifdef MODEL_TECH
 logic [1:0] clk;
 assign clk = 0;
-assign clkSYS = clk300M;
+assign clkSYS = clk240M;
 `else
 logic [1:0] clk;
-logic [23:0] cnt;
-always_ff @(posedge clk10M)
+logic [25:0] cnt;
+always_ff @(posedge clk50M)
 	if (cnt == 0) begin
-		cnt <= 10000000;
+		cnt <= 50000000;
 		clk <= KEY[1] ? clk : clk + 1;
 	end else
 		cnt <= cnt - 1;
 
 logic sys[4];
-assign sys[0] = clk300M;
-assign sys[1] = clk180M;
+assign sys[0] = clk360M;
+assign sys[1] = clk240M;
 assign sys[2] = clk90M;
-assign sys[3] = clk180M;
+assign sys[3] = clk240M;
 assign clkSYS = sys[clk];
 `endif
 
@@ -123,10 +123,11 @@ assign tft_pwm = n_reset;
 
 // ADC
 logic [9:0] adc_data;
-adc #(24'hf00000) adc0 (clkSYS, clkADC, n_reset, adc_data, disp_swap, disp_stat,
-	`adc.mem, `adc.valid, `adc.addr, `adc.data, `adc.req, `adc.wr, `adc.ack,
-	GPIO_1[18], {GPIO_1[32], GPIO_1[30], GPIO_1[31], GPIO_1[29], GPIO_1[33],
+adc #(10) adc0 (clkADC, n_reset, adc_data, GPIO_1[18],
+	{GPIO_1[32], GPIO_1[30], GPIO_1[31], GPIO_1[29], GPIO_1[33],
 	GPIO_1[27], GPIO_1[25], GPIO_1[19], GPIO_1[23], GPIO_1[21]});
+display_samples #(24'hf00000) disp0 (clkSYS, clkADC, n_reset, adc_data, disp_swap, disp_stat,
+	`adc.mem, `adc.valid, `adc.addr, `adc.data, `adc.req, `adc.wr, `adc.ack);
 
 // Memory RW test client
 /*logic test_fail;
