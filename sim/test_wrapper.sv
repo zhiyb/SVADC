@@ -42,13 +42,15 @@ begin
 	forever #10ns CLOCK_50 = ~CLOCK_50;
 end
 
-logic [15:0] DRAM_DQ_q;
-assign DRAM_DQ = DRAM_DQ_q;
+logic [15:0] cnt;
+assign DRAM_DQ = cnt;
+assign {GPIO_1[32], GPIO_1[30], GPIO_1[31], GPIO_1[29], GPIO_1[33],
+	GPIO_1[27], GPIO_1[25], GPIO_1[19], GPIO_1[23], GPIO_1[21]} = cnt[9:0];
 
 always_ff @(posedge DRAM_CLK, negedge KEY[0])
 	if (~KEY[0])
-		DRAM_DQ_q <= 16'h0;
+		cnt <= 16'h0;
 	else
-		DRAM_DQ_q <= DRAM_DQ_q + 1;
+		cnt <= cnt + 1;
 
 endmodule

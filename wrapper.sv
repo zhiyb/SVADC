@@ -104,7 +104,7 @@ logic tft_empty, tft_full, disp_swap, disp_stat;
 `ifdef MODEL_TECH
 tft #(AN, DN, BURST, 24'hf00000, 10, '{1, 1, 60, 1}, 10, '{1, 1, 3, 1}) tft0
 `else
-tft #(AN, DN, BURST, 24'hf00000, 10, '{1, 43, 799, 15}, 10, '{1, 20, 479, 6}) tft0
+tft #(AN, DN, BURST, 24'hf00000, 10, '{1, 43, 799, 15}, 10, '{1, 21, 479, 6}) tft0
 `endif
 	(.clkSYS(clkSYS), .clkTFT(clkTFT), .n_reset(n_reset), .swap(disp_swap), .stat(disp_stat),
 	.mem_data(`tft.mem), .mem_valid(`tft.valid),
