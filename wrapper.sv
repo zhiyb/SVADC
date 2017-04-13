@@ -64,10 +64,10 @@ always_ff @(posedge clk50M)
 		cnt <= cnt - 1;
 
 logic sys[4];
-assign sys[0] = clk360M;
-assign sys[1] = clk240M;
-assign sys[2] = clk90M;
-assign sys[3] = clk240M;
+assign sys[0] = clk240M;
+assign sys[1] = clk360M;
+assign sys[2] = clk240M;
+assign sys[3] = clk90M;
 assign clkSYS = sys[clk];
 `endif
 
@@ -128,6 +128,9 @@ adc #(10) adc0 (clkADC, n_reset, adc_data, GPIO_1[18],
 	GPIO_1[27], GPIO_1[25], GPIO_1[19], GPIO_1[23], GPIO_1[21]});
 display_samples #(24'hf00000) disp0 (clkSYS, clkADC, n_reset, adc_data, disp_swap, disp_stat,
 	`adc.mem, `adc.valid, `adc.addr, `adc.data, `adc.req, `adc.wr, `adc.ack);
+
+// Waveform generator
+wavegen_sin #(4, 5) wave0 (clk80M, n_reset, GPIO_1[0]);
 
 // Memory RW test client
 /*logic test_fail;

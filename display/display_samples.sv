@@ -115,8 +115,7 @@ always_ff @(posedge clkSYS, negedge n_reset)
 	else if (state == DispClr)
 		data <= 0;
 	else if (state == Disp)
-		data <= ram[8:0] == rdrow ? 16'h667f : {2'b0, rdrow[8:6], 3'b0, rdrow[5:3], 2'b0, rdrow[2:0]};
-		//data <= ram[9:1] == rdrow ? 16'h667f : 16'h0;
+		data <= ram[8:0] == rdrow ? 16'h667f : 16'h0;
 
 always_ff @(posedge clkSYS, negedge n_reset)
 	if (~n_reset)
