@@ -1,7 +1,7 @@
 CFLAGS	+= -O3
 LDFLAGS	+= -O3 -lm
 
-all: rom_sin_4_5.mif
+all: rom_sin_4_5.mif rom_test_lines.mif
 
 .DELETE_ON_ERROR:
 

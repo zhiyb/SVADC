@@ -1,6 +1,6 @@
 module tft #(
 	// Address bus size, data bus size
-	parameter AN = 24, DN = 16, BURST, BASE,
+	parameter AN = 24, DN = 16, BURST, BASE, SWAP,
 	// VT & HT: Sync width, back porch, display, front porch
 	int HN, logic [HN - 1:0] HT[4],
 	int VN, logic [VN - 1:0] VT[4]
@@ -41,7 +41,7 @@ always_ff @(posedge aclr)
 
 always_ff @(posedge clkSYS, posedge aclr)
 	if (aclr)
-		req_addr <= swap ? BASE + 24'h080000 : BASE;
+		req_addr <= swap ? SWAP : BASE;
 	else if (req_ack)
 		req_addr <= req_addr + BURST;
 

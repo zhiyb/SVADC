@@ -3,11 +3,10 @@ module arbiter_sync_pri #(parameter AN, DN, N) (
 
 	// Memory interface
 	arbiter_if mem,
-	input logic [DN - 1:0] mem_data,
 	input logic [N - 1:0] mem_id,
 
 	// Arbiter interface
-	arbiter_if arb[4]
+	arbiter_if arb[2 ** N]
 );
 
 logic [AN - 1:0] arb_addr[2 ** N];
@@ -27,7 +26,7 @@ for (i = 0; i != 2 ** N; i++) begin: arb_net
 	begin
 		arb[i].ack <= mem.ack && mem.id == arb[i].id;
 		arb[i].valid <= mem.valid && mem_id == arb[i].id;
-		arb[i].mem <= mem_data;
+		arb[i].mem <= mem.mem;
 	end
 end
 endgenerate
