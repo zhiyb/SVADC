@@ -1,6 +1,6 @@
 `timescale 1 ps / 1 ps
 
-module tb;
+module test_wrapper;
 
 logic CLOCK_50;
 logic [1:0] KEY;

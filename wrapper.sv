@@ -99,11 +99,14 @@ parameter tft_base = 24'hf00000, tft_swap = 24'hf80000;
 logic [5:0] tft_level;
 logic tft_empty, tft_full, disp_swap, disp_stat;
 `ifdef MODEL_TECH
-tft #(AN, DN, BURST, tft_base, tft_swap, 10, '{1, 1, 60, 1}, 10, '{1, 1, 3, 1}) tft0
+tft #(AN, DN, BURST, tft_base, tft_swap,
+	10, '{1, 1, 60, 1}, 10, '{1, 1, 3, 1}) tft0
 `else
-tft #(AN, DN, BURST, tft_base, tft_swap, 10, '{1, 43, 799, 15}, 10, '{1, 21, 479, 6}) tft0
+tft #(AN, DN, BURST, tft_base, tft_swap,
+	10, '{1, 43, 799, 15}, 10, '{1, 21, 479, 6}) tft0
 `endif
-	(.clkSYS(clkSYS), .clkTFT(clkTFT), .n_reset(n_reset), .swap(disp_swap), .stat(disp_stat),
+	(.clkSYS(clkSYS), .clkTFT(clkTFT), .n_reset(n_reset),
+	.swap(disp_swap), .stat(disp_stat),
 	.mem_data(`tft.mem), .mem_valid(`tft.valid),
 	.req_addr(`tft.addr), .req_ack(`tft.ack), .req(`tft.req),
 	.disp(GPIO_0[26]), .de(GPIO_0[29]), .dclk(GPIO_0[25]),
@@ -124,8 +127,15 @@ adc #(10) adc0 (clkADC, n_reset, adc_data, GPIO_1[18],
 	{GPIO_1[32], GPIO_1[30], GPIO_1[31], GPIO_1[29], GPIO_1[33],
 	GPIO_1[27], GPIO_1[25], GPIO_1[19], GPIO_1[23], GPIO_1[21]});
 
-display #(AN, DN, tft_base, tft_swap) disp0 (clkSYS, clkADC, n_reset,
-	adc_data, disp_swap, disp_stat, `disp);
+// FFT
+logic fft_shift;
+logic [9:0] fft_data;
+fft #(10, 10, 5, 32, 1) fft0 (clkADC, adc_data, fft_shift, fft_data);
+
+// Waveform display
+display #(AN, DN, tft_base, tft_swap, 32) disp0 (clkSYS, clkADC, n_reset,
+	adc_data, fft_shift, fft_data,
+	disp_swap, disp_stat, `disp);
 
 // Waveform generator
 wavegen_sin #(4, 5) wave0 (clk80M, n_reset, GPIO_1[0]);
