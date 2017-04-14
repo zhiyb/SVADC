@@ -104,7 +104,8 @@ assign aclr = ~n_reset || done;
 always_ff @(posedge clkSYS)
 begin
 	arb.addr <= (stat ? SWAP : BASE) | (y * W + x);
-	arb.data <= {fifo[9:5], fifo[5:0], ~fifo[9:5]};
+	arb.data <= {~y[8:4], 6'h3f, y[8:4]};
+	//arb.data <= {fifo[9:5], fifo[5:0], ~fifo[9:5]};
 end
 
 //assign arb.data = 16'h667f;
