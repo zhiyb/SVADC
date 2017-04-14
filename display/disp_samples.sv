@@ -49,17 +49,17 @@ always_ff @(posedge clkSYS, negedge n_reset)
 		x <= 0;
 	else if (state != Draw)
 		x <= 0;
-	else if (arb.ack)
+	else if (rdreq)
 		x <= x + 1;
 
-logic [2:0] req;
+logic [3:0] req;
 always_ff @(posedge clkSYS, negedge n_reset)
 	if (~n_reset)
 		req <= 0;
 	else if (arb.ack)
 		req <= 0;
 	else
-		req <= {req[1:0], state == Draw ? 1'b1 : 1'b0};
+		req <= {req[2:0], state == Draw ? 1'b1 : 1'b0};
 
 always_ff @(posedge clkSYS, negedge n_reset)
 	if (~n_reset)
@@ -67,7 +67,26 @@ always_ff @(posedge clkSYS, negedge n_reset)
 	else if (arb.ack)
 		arb.req <= 1'b0;
 	else
-		arb.req <= req[1];
+		arb.req <= req[3] && state == Draw;
+
+logic [$clog2(H) - 1:0] y, ynext, ydest;
+logic [3:0] ack_latch, rdreq_latch;
+logic first_column, new_column;
+always_ff @(posedge clkSYS)
+begin
+	ack_latch <= {ack_latch[2:0], arb.ack};
+	rdreq_latch <= {rdreq_latch[2:0], rdreq};
+	first_column <= rdreq_latch[0] && ~ack_latch[1];
+	new_column <= ack_latch[2];
+
+	ydest <= (H - 1) - fifo * H / 1024;
+	ynext <= ydest > y ? y + 1 : y - 1;
+
+	if (first_column)
+		y <= ydest;
+	else if (new_column)
+		y <= ydest != y ? ynext : y;
+end
 
 always_ff @(posedge clkSYS, negedge n_reset)
 	if (~n_reset)
@@ -75,22 +94,18 @@ always_ff @(posedge clkSYS, negedge n_reset)
 	else if (state == Smpl && rdfull)
 		rdreq <= 1'b1;
 	else
-		rdreq <= arb.ack;
+		rdreq <= arb.ack && y == ydest;
 
 always_ff @(posedge clkSYS)
-	done <= arb.ack && x == W - 1;
+	done <= arb.ack && x == W - 1 && y == ydest;
 
 assign aclr = ~n_reset || done;
 
-logic [$clog2(H) - 1:0] y;
 always_ff @(posedge clkSYS)
-	y <= (H - 1) - fifo * H / 1024;
-
-always_ff @(posedge clkSYS)
+begin
 	arb.addr <= (stat ? SWAP : BASE) | (y * W + x);
-
-always_ff @(posedge clkSYS)
 	arb.data <= {fifo[9:5], fifo[5:0], ~fifo[9:5]};
+end
 
 //assign arb.data = 16'h667f;
 assign arb.wr = 1'b1;
