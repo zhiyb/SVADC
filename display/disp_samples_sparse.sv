@@ -65,13 +65,19 @@ always_ff @(posedge clkSYS, negedge n_reset)
 	if (~n_reset)
 		y[1] <= 0;
 	else
-		y[1] <= (H - 1) - fifo * H / 512;
+		y[1] <= fifo[9] ? H - 1 : (H - 1) - fifo * H / 512;
 
 always_ff @(posedge clkSYS)
-	if (rdreq) begin
+	if (rdreq)
 		x[0] <= x[1];
+
+logic rdreq_latch;
+always_ff @(posedge clkSYS)
+	rdreq_latch <= rdreq;
+
+always_ff @(posedge clkSYS)
+	if (rdreq_latch)
 		y[0] <= y[1];
-	end
 
 logic [9:0] pos[2];
 logic line_start, line_done, line_next, line_valid;
@@ -106,11 +112,18 @@ always_ff @(posedge clkSYS, negedge n_reset)
 		line_start <= line_start_latch;
 	end
 
+logic req;
 always_ff @(posedge clkSYS, negedge n_reset)
-	if (~n_reset)
+	if (~n_reset) begin
+		req <= 1'b0;
 		arb.req <= 1'b0;
-	else
-		arb.req <= ~arb.ack && line_valid;
+	end else if (arb.ack) begin
+		req <= 1'b0;
+		arb.req <= 1'b0;
+	end else begin
+		req <= line_valid;
+		arb.req <= req;
+	end
 
 assign line_next = arb.ack;
 
@@ -121,7 +134,7 @@ assign aclr = ~n_reset;
 
 always_ff @(posedge clkSYS)
 begin
-	arb.addr <= (stat ? SWAP : BASE) | (pos[1] * W + pos[0]);
+	arb.addr <= (stat ? SWAP : BASE) | pos[1] * W + pos[0];
 	arb.data <= {~pos[1][8:4], 6'h3f, pos[1][8:4]};
 end
 

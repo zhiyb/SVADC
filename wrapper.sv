@@ -65,9 +65,9 @@ always_ff @(posedge clk50M)
 
 logic sys[4];
 assign sys[0] = clk240M;
-assign sys[1] = clk360M;
+assign sys[1] = clk90M;
 assign sys[2] = clk240M;
-assign sys[3] = clk90M;
+assign sys[3] = clk360M;
 assign clkSYS = sys[clk];
 `endif
 

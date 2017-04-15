@@ -51,18 +51,18 @@ case (SIZE / 2)
 endcase
 
 for (i = 0; i != SIZE / 2; i++) begin: mult
-	logic [RN * 2 - 1:0] w[2];
-	assign w[0] = signed'(o[i][0]) * signed'(exp[i][0]) -
-		signed'(o[i][1]) * signed'(exp[i][1]);
-	assign w[1] = signed'(o[i][0]) * signed'(exp[i][1]) +
-		signed'(o[i][1]) * signed'(exp[i][0]);
+	logic [RN - 1:0] w[2];
+	assign w[0] = signed'((int'(signed'(o[i][0])) * int'(signed'(exp[i][0])) -
+		int'(signed'(o[i][1])) * int'(signed'(exp[i][1]))) >>> FRAC);
+	assign w[1] = signed'((int'(signed'(o[i][0])) * int'(signed'(exp[i][1])) +
+		int'(signed'(o[i][1])) * int'(signed'(exp[i][0]))) >>> FRAC);
 
 	always_ff @(posedge clk)
 	begin
-		out[i][0] <= e[i][0] + w[0][FRAC + RN - 1:FRAC];
-		out[i][1] <= e[i][1] + w[1][FRAC + RN - 1:FRAC];
-		out[i + SIZE / 2][0] <= e[i][0] - w[0][FRAC + RN - 1:FRAC];
-		out[i + SIZE / 2][1] <= e[i][1] - w[1][FRAC + RN - 1:FRAC];
+		out[i][0] <= e[i][0] + w[0];
+		out[i][1] <= e[i][1] + w[1];
+		out[i + SIZE / 2][0] <= e[i][0] - w[0];
+		out[i + SIZE / 2][1] <= e[i][1] - w[1];
 	end
 end
 endgenerate

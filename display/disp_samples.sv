@@ -52,14 +52,14 @@ always_ff @(posedge clkSYS, negedge n_reset)
 	else if (rdreq)
 		x <= x + 1;
 
-logic [3:0] req;
+logic [4:0] req;
 always_ff @(posedge clkSYS, negedge n_reset)
 	if (~n_reset)
 		req <= 0;
 	else if (arb.ack)
 		req <= 0;
 	else
-		req <= {req[2:0], state == Draw ? 1'b1 : 1'b0};
+		req <= {req[3:0], state == Draw ? 1'b1 : 1'b0};
 
 always_ff @(posedge clkSYS, negedge n_reset)
 	if (~n_reset)
@@ -67,7 +67,7 @@ always_ff @(posedge clkSYS, negedge n_reset)
 	else if (arb.ack)
 		arb.req <= 1'b0;
 	else
-		arb.req <= req[3] && state == Draw;
+		arb.req <= req[4] && state == Draw;
 
 logic [$clog2(H) - 1:0] y, ynext, ydest;
 logic [3:0] ack_latch, rdreq_latch;
