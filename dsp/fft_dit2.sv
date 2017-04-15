@@ -3,7 +3,7 @@ module fft_dit2 #(parameter SIZE, RN, FRAC) (
 	input logic clk, n_reset,
 	input logic [RN - 1:0] in[SIZE][2],
 	output logic done,
-	output logic [RN - 1:0] out[SIZE][2]
+	output logic [RN - 1:0] out[2]
 );
 
 logic [RN - 1:0] exp[SIZE / 2][2];
@@ -33,113 +33,57 @@ case (SIZE / 2)
 endcase
 endgenerate
 
+logic [RN - 1:0] x[2][SIZE / 2][2];
 genvar i;
 generate
-if (SIZE > 4) begin
-	logic swap, udone;
-	logic [RN - 1:0] ui[SIZE / 2][2], uo[SIZE / 2][2];
-	fft_dit2 #(SIZE / 2, RN, FRAC) u0 (clk, n_reset, ui, udone, uo);
-
-	always_ff @(posedge clk, negedge n_reset)
-		if (~n_reset)
-			swap <= 1'b0;
-		else if (udone)
-			swap <= ~swap;
-
-	for (i = 0; i != SIZE / 2; i++) begin: mult
-		assign ui[i] = swap ? in[i * 2 + 1] : in[i * 2];
-
-		logic [RN - 1:0] w[2];
-		assign w[0] = signed'((int'(signed'(uo[i][0])) * int'(signed'(exp[i][0])) -
-			int'(signed'(uo[i][1])) * int'(signed'(exp[i][1]))) >>> FRAC);
-		assign w[1] = signed'((int'(signed'(uo[i][0])) * int'(signed'(exp[i][1])) +
-			int'(signed'(uo[i][1])) * int'(signed'(exp[i][0]))) >>> FRAC);
-
-		always_ff @(posedge clk)
-		begin
-			if (udone) begin
-				if (swap) begin
-					out[i][0] <= out[i][0] + w[0];
-					out[i][1] <= out[i][1] + w[1];
-					out[i + SIZE / 2][0] <= out[i][0] - w[0];
-					out[i + SIZE / 2][1] <= out[i][1] - w[1];
-				end else begin
-					out[i][0] <= uo[i][0];
-					out[i][1] <= uo[i][1];
-					out[i + SIZE / 2][0] <= uo[i][0];
-					out[i + SIZE / 2][1] <= uo[i][1];
-				end
-			end
-		end
-	end
-
-	always_ff @(posedge clk, negedge n_reset)
-		if (~n_reset)
-			done <= 1'b0;
-		else
-			done <= udone && swap;
-end else if (SIZE > 2) begin
-	logic udone;
-	logic [RN - 1:0] x[2][SIZE / 2][2];
-	logic [RN - 1:0] e[SIZE / 2][2], o[SIZE / 2][2];
-	fft_dit2 #(SIZE / 2, RN, FRAC) u0 (clk, n_reset, x[0], udone, e);
-	fft_dit2 #(SIZE / 2, RN, FRAC) u1 (clk, n_reset, x[1], , o);
-
-	for (i = 0; i != SIZE / 2; i++) begin: mult
-		assign x[0][i] = in[i * 2];
-		assign x[1][i] = in[i * 2 + 1];
-
-		logic [RN - 1:0] w[2];
-		assign w[0] = signed'((int'(signed'(o[i][0])) * int'(signed'(exp[i][0])) -
-			int'(signed'(o[i][1])) * int'(signed'(exp[i][1]))) >>> FRAC);
-		assign w[1] = signed'((int'(signed'(o[i][0])) * int'(signed'(exp[i][1])) +
-			int'(signed'(o[i][1])) * int'(signed'(exp[i][0]))) >>> FRAC);
-
-		always_ff @(posedge clk)
-		begin
-			out[i][0] <= e[i][0] + w[0];
-			out[i][1] <= e[i][1] + w[1];
-			out[i + SIZE / 2][0] <= e[i][0] - w[0];
-			out[i + SIZE / 2][1] <= e[i][1] - w[1];
-		end
-	end
-
-	logic unit_done;
-	always_ff @(posedge clk, negedge n_reset)
-		if (~n_reset) begin
-			unit_done <= 1'b0;
-			done <= 1'b0;
-		end else begin
-			unit_done <= udone;
-			done <= unit_done;
-		end
-end else begin
-	logic [RN - 1:0] e[SIZE / 2][2], o[SIZE / 2][2];
-	assign e[0] = in[0];
-	assign o[0] = in[1];
-
-	for (i = 0; i != SIZE / 2; i++) begin: mult
-		logic [RN - 1:0] w[2];
-		assign w[0] = signed'((int'(signed'(o[i][0])) * int'(signed'(exp[i][0])) -
-			int'(signed'(o[i][1])) * int'(signed'(exp[i][1]))) >>> FRAC);
-		assign w[1] = signed'((int'(signed'(o[i][0])) * int'(signed'(exp[i][1])) +
-			int'(signed'(o[i][1])) * int'(signed'(exp[i][0]))) >>> FRAC);
-
-		always_ff @(posedge clk)
-		begin
-			out[i][0] <= e[i][0] + w[0];
-			out[i][1] <= e[i][1] + w[1];
-			out[i + SIZE / 2][0] <= e[i][0] - w[0];
-			out[i + SIZE / 2][1] <= e[i][1] - w[1];
-		end
-	end
-
-	always_ff @(posedge clk, negedge n_reset)
-		if (~n_reset)
-			done <= 1'b0;
-		else
-			done <= ~done;
+for (i = 0; i != SIZE / 2; i++) begin: mult
+	assign x[0][i] = in[i * 2];
+	assign x[1][i] = in[i * 2 + 1];
 end
 endgenerate
+
+logic [$clog2(SIZE) - 1:0] sel;
+always_ff @(posedge clk, negedge n_reset)
+	if (~n_reset)
+		sel <= -$clog2(SIZE / 2);
+	else
+		sel <= sel + 1;
+
+always_ff @(posedge clk, negedge n_reset)
+	if (~n_reset)
+		done <= 1'b0;
+	else
+		done <= sel == 0;
+
+logic section;
+logic [RN - 1:0] e[2], o[2], w[2];
+generate
+if (SIZE > 2) begin
+	logic [$clog2(SIZE) - 2:0] select;
+	assign {section, select} = sel;
+
+	fft_dit2 #(SIZE / 2, RN, FRAC) u0 (clk, n_reset, x[0], , e);
+	fft_dit2 #(SIZE / 2, RN, FRAC) u1 (clk, n_reset, x[1], , o);
+
+	assign w[0] = signed'((int'(signed'(o[0])) * int'(signed'(exp[select][0])) -
+		int'(signed'(o[1])) * int'(signed'(exp[select][1]))) >>> FRAC);
+	assign w[1] = signed'((int'(signed'(o[0])) * int'(signed'(exp[select][1])) +
+		int'(signed'(o[1])) * int'(signed'(exp[select][0]))) >>> FRAC);
+end else begin
+	assign section = sel;
+	assign e = x[0][0];
+	assign o = x[1][0];
+	assign w[0] = signed'((int'(signed'(o[0])) * int'(signed'(exp[0][0])) -
+		int'(signed'(o[1])) * int'(signed'(exp[0][1]))) >>> FRAC);
+	assign w[1] = signed'((int'(signed'(o[0])) * int'(signed'(exp[0][1])) +
+		int'(signed'(o[1])) * int'(signed'(exp[0][0]))) >>> FRAC);
+end
+endgenerate
+
+always_ff @(posedge clk)
+	if (~section)
+		out <= '{e[0] + w[0], e[1] + w[1]};
+	else
+		out <= '{e[0] - w[0], e[1] - w[1]};
 
 endmodule

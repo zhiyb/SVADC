@@ -29,7 +29,7 @@ endcase
 endgenerate
 
 logic unit_done;
-logic [RN - 1:0] in[SIZE * 2][2], out[SIZE * 2][2];
+logic [RN - 1:0] in[SIZE * 2][2], out[2];
 fft_dit2 #(SIZE * 2, RN, FRAC) fft0 (clk, n_reset, in, unit_done, out);
 
 logic [RN - 1:0] data[SIZE * 2];
@@ -47,26 +47,18 @@ always_comb
 		// Blackman-Harris window
 		in[i] = '{signed'((int'(signed'(data[i])) * int'(signed'(w[i]))) >>> FRAC), 0};
 
-logic [RN - 1:0] data_latch[SIZE][2];
+logic [RN - 1:0] out_latch[2];
 always_ff @(posedge clk)
-	if (shift)
-		for (int i = 1; i != SIZE; i++)
-			data_latch[i - 1] <= data_latch[i];
-	else if (unit_done)
-		for (int i = 0; i != SIZE; i++) begin
-			data_latch[i][0] <=
-				out[i][0][RN - 1] ? -out[i][0] : out[i][0];
-			data_latch[i][1] <=
-				out[i][1][RN - 1] ? -out[i][1] : out[i][1];
-		end
+begin
+	out_latch[0] <= out[0][RN - 1] ? -out[0] : out[0];
+	out_latch[1] <= out[1][RN - 1] ? -out[1] : out[1];
+	fft_data <= out_latch[0] + out_latch[1];
+end
 
 always_ff @(posedge clk, negedge n_reset)
 	if (~n_reset)
 		done <= 1'b0;
 	else
 		done <= unit_done;
-
-always_ff @(posedge clk)
-	fft_data <= data_latch[0][0] + data_latch[0][1];
 
 endmodule

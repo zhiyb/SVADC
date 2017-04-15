@@ -25,13 +25,18 @@ fifo_samples_sparse fifo0 (aclr, smpl,
 always_ff @(posedge clkSmpl, negedge n_reset)
 	if (~n_reset)
 		smpl_req <= 1'b0;
-	else if (wrempty && smpl_avail)
+	else if (wrempty)
 		smpl_req <= 1'b1;
 	else if (wrfull)
 		smpl_req <= 1'b0;
 
-always_ff @(posedge clkSmpl)
-	wrreq <= smpl_req;
+always_ff @(posedge clkSmpl, negedge n_reset)
+	if (~n_reset)
+		wrreq <= 1'b0;
+	else if (smpl_avail)
+		wrreq <= smpl_req;
+	else if (wrfull)
+		wrreq <= 1'b0;
 
 enum int unsigned {Idle, Smpl, Draw} state;
 always_ff @(posedge clkSYS, negedge n_reset)
