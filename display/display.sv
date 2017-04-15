@@ -9,6 +9,7 @@ module display #(parameter AN, DN, BASE, SWAP, FFT,
 
 	// Data samples and FFT
 	input logic [9:0] smpl,
+	input logic fft_avail,
 	output logic fft_shift,
 	input logic [9:0] fft,
 
@@ -35,7 +36,7 @@ arbiter_sync_pri #(AN, DN, 2) arb0 (clkSYS, n_reset, mem, 2'h0, arb);
 logic fft_start, fft_done;
 disp_samples_sparse #(AN, DN, BASE, SWAP, FFT, W, H) fft0 (
 	clkSYS, clkSmpl, n_reset,
-	fft_start, fft_done, ~stat, arb[0], fft_shift, fft);
+	fft_start, fft_done, ~stat, arb[0], fft_avail, fft_shift, fft);
 
 logic smpl_start, smpl_done;
 disp_samples #(AN, DN, BASE, SWAP, W, H) smpl0 (clkSYS, clkSmpl, n_reset,

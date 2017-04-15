@@ -128,13 +128,19 @@ adc #(10) adc0 (clkADC, n_reset, adc_data, GPIO_1[18],
 	GPIO_1[27], GPIO_1[25], GPIO_1[19], GPIO_1[23], GPIO_1[21]});
 
 // FFT
-logic fft_shift;
+logic fft_done, fft_shift;
 logic [9:0] fft_data;
-fft #(10, 10, 5, 32, 1) fft0 (clkADC, adc_data, fft_shift, fft_data);
+`ifdef MODEL_TECH
+fft #(10, 16, 5, 32, 1) fft0 (clkADC, n_reset,
+	adc_data, fft_done, fft_shift, fft_data);
+`else
+fft #(10, 10, 5, 32, 1) fft0 (clkADC, n_reset,
+	adc_data, fft_done, fft_shift, fft_data);
+`endif
 
 // Waveform display
 display #(AN, DN, tft_base, tft_swap, 32) disp0 (clkSYS, clkADC, n_reset,
-	adc_data, fft_shift, fft_data,
+	adc_data, fft_done, fft_shift, fft_data,
 	disp_swap, disp_stat, `disp);
 
 // Waveform generator

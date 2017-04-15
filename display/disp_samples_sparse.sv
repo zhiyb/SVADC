@@ -10,6 +10,7 @@ module disp_samples_sparse #(parameter AN, DN, BASE, SWAP, SIZE, W, H) (
 	arbiter_if arb,
 
 	// Sample data input
+	input logic smpl_avail,
 	output logic smpl_req,
 	input logic [9:0] smpl
 );
@@ -24,7 +25,7 @@ fifo_samples_sparse fifo0 (aclr, smpl,
 always_ff @(posedge clkSmpl, negedge n_reset)
 	if (~n_reset)
 		smpl_req <= 1'b0;
-	else if (wrempty)
+	else if (wrempty && smpl_avail)
 		smpl_req <= 1'b1;
 	else if (wrfull)
 		smpl_req <= 1'b0;
