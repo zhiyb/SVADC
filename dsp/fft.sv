@@ -67,8 +67,6 @@ always_ff @(posedge clk, negedge n_reset)
 		done <= unit_done;
 
 always_ff @(posedge clk)
-begin
 	fft_data <= data_latch[0][0] + data_latch[0][1];
-end
 
 endmodule
