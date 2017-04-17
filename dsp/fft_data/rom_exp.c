@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 		unsigned long im = round(sin(w) * pow(2.0, frac));
 		re = re & ((1ul << width) - 1);
 		im = im & ((1ul << width) - 1);
-		unsigned long v = (re << width) | im;
+		unsigned long v = (im << width) | re;
 		printf("\t%lu : %lu;\n", i, v);
 	}
 	puts("END;");

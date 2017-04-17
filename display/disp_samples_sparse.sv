@@ -17,10 +17,12 @@ module disp_samples_sparse #(parameter AN, DN, BASE, SWAP, SIZE, W, H) (
 
 logic aclr, rdreq, wrreq;
 logic rdempty, rdfull, wrempty, wrfull;
-logic [9:0] fifo;
-fifo_samples_sparse fifo0 (aclr, smpl[14:3],
+logic [9:0] fifo, fifo_d;
+fifo_samples_sparse fifo0 (aclr, fifo_d,
 	clkSYS, ~rdempty && rdreq, clkSmpl, ~wrfull && wrreq,
 	fifo, rdempty, rdfull, wrempty, wrfull);
+
+assign fifo_d = smpl >= 16'h0200 ? 16'h0200 + (smpl >> 5) : smpl;
 
 always_ff @(posedge clkSmpl, negedge n_reset)
 	if (~n_reset)

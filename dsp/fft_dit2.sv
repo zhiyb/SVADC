@@ -1,49 +1,21 @@
 // Size of DFF unit, result number of bits, fraction bits
 module fft_dit2 #(parameter SIZE, RN, FRAC) (
 	input logic clk, n_reset,
-	input logic [RN - 1:0] in[SIZE][2],
+	input logic [RN - 1:0] in[2],
 	output logic req, active, valid,
 	output logic [RN - 1:0] out[2]
 );
 
-logic [RN - 1:0] exp[SIZE / 2][2];
-generate
-case (SIZE / 2)
-1:	assign exp = '{
-`include "fft_data/exp1.sv"
-	};
-2:	assign exp = '{
-`include "fft_data/exp2.sv"
-	};
-4:	assign exp = '{
-`include "fft_data/exp4.sv"
-	};
-8:	assign exp = '{
-`include "fft_data/exp8.sv"
-	};
-16:	assign exp = '{
-`include "fft_data/exp16.sv"
-	};
-32:	assign exp = '{
-`include "fft_data/exp32.sv"
-	};
-64:	assign exp = '{
-`include "fft_data/exp64.sv"
-	};
-128:	assign exp = '{
-`include "fft_data/exp128.sv"
-	};
-256:	assign exp = '{
-`include "fft_data/exp256.sv"
-	};
-512:	assign exp = '{
-`include "fft_data/exp512.sv"
-	};
-1024:	assign exp = '{
-`include "fft_data/exp1024.sv"
-	};
-endcase
-endgenerate
+localparam RAM_AN = 10, RAM_DN = 32;
+localparam ROM_AN = 9, ROM_DN = 14;
+
+logic [ROM_AN - 1:0] eaddr;
+logic [ROM_DN - 1:0] rom;
+rom_exp rom0 (eaddr, clk, rom);
+
+logic [RN - 1:0] exp[2];
+assign exp = '{{{RN - ROM_DN / 2{rom[ROM_DN / 2 - 1]}}, rom[0 +: ROM_DN / 2]},
+	{{RN - ROM_DN / 2{rom[ROM_DN - 1]}}, rom[ROM_DN / 2 +: ROM_DN / 2]}};
 
 localparam SIZEN = $clog2(SIZE / 2);
 
@@ -105,7 +77,6 @@ struct {
 	logic [RN - 1:0] d[2], q[2], w[2], o[2];
 } sec[2];
 
-localparam RAM_AN = 10, RAM_DN = 32;
 struct {
 	logic [RAM_AN - 1:0] addr[2];
 	logic [RAM_DN - 1:0] d[2], q[2];
@@ -119,6 +90,8 @@ always_ff @(posedge clk)
 	else
 		dir_latch <= dir;
 
+assign eaddr = (rev & mask) << (ROM_AN - SIZEN);
+
 generate
 for (i = 0; i != 2; i++) begin: asgn
 	ram_fft ram0 (ram[i].addr[0], ram[i].addr[1], clk,
@@ -129,9 +102,7 @@ for (i = 0; i != 2; i++) begin: asgn
 	assign ram[i].addr[1] = (~reload && ram[i].wren[1]) ? wraddr[1] : rdaddr[1];
 	assign sec[i].d = '{ram[dir_latch].q[i][0 +: RN], ram[dir_latch].q[i][RN +: RN]};
 
-	always_ff @(posedge clk)
-		sec[i].w <= exp[rev & mask];
-
+	assign sec[i].w = exp;
 	assign sec[i].o[0] = signed'((int'(signed'(sec[i].d[0])) * int'(signed'(sec[i].w[0])) -
 		int'(signed'(sec[i].d[1])) * int'(signed'(sec[i].w[1]))) >>> FRAC);
 	assign sec[i].o[1] = signed'((int'(signed'(sec[i].d[0])) * int'(signed'(sec[i].w[1])) +
@@ -153,7 +124,7 @@ begin
 	ram[0].d = ram_out_d;
 	ram[0].wren = '{dir_latch, dir_latch};
 	if (reload) begin
-		ram[0].d[0] = {{RAM_DN - RN * 2{1'bx}}, in[{dir, sel}][1], in[{dir, sel}][0]};
+		ram[0].d[0] = {{RAM_DN - RN * 2{1'bx}}, in[1], in[0]};
 		ram[0].d[1] = ram[0].d[0];
 		ram[0].wren = '{~dir, dir};
 	end
