@@ -10,33 +10,29 @@ module disp_samples_sparse #(parameter AN, DN, BASE, SWAP, SIZE, W, H) (
 	arbiter_if arb,
 
 	// Sample data input
-	input logic smpl_avail,
+	input logic smpl_valid,
 	output logic smpl_req,
-	input logic [9:0] smpl
+	input logic [15:0] smpl
 );
 
 logic aclr, rdreq, wrreq;
 logic rdempty, rdfull, wrempty, wrfull;
 logic [9:0] fifo;
-fifo_samples_sparse fifo0 (aclr, smpl,
+fifo_samples_sparse fifo0 (aclr, smpl[14:3],
 	clkSYS, ~rdempty && rdreq, clkSmpl, ~wrfull && wrreq,
 	fifo, rdempty, rdfull, wrempty, wrfull);
 
 always_ff @(posedge clkSmpl, negedge n_reset)
 	if (~n_reset)
 		smpl_req <= 1'b0;
+	else if (aclr)
+		smpl_req <= 1'b0;
 	else if (wrempty)
 		smpl_req <= 1'b1;
 	else if (wrfull)
 		smpl_req <= 1'b0;
 
-always_ff @(posedge clkSmpl, negedge n_reset)
-	if (~n_reset)
-		wrreq <= 1'b0;
-	else if (smpl_avail)
-		wrreq <= smpl_req;
-	else if (wrfull)
-		wrreq <= 1'b0;
+assign wrreq = smpl_req && smpl_valid;
 
 enum int unsigned {Idle, Smpl, Draw} state;
 always_ff @(posedge clkSYS, negedge n_reset)
@@ -71,7 +67,7 @@ always_ff @(posedge clkSYS, negedge n_reset)
 	if (~n_reset)
 		y[1] <= 0;
 	else
-		y[1] <= fifo[9] ? H - 1 : (H - 1) - fifo * H / 512;
+		y[1] <= (H - 1) - fifo * H / 1024;
 
 always_ff @(posedge clkSYS)
 	if (rdreq)
@@ -95,7 +91,7 @@ logic last;
 always_ff @(posedge clkSYS, negedge n_reset)
 	if (~n_reset)
 		last <= 1'b0;
-	else if (state == Idle)
+	else if (state != Draw)
 		last <= 1'b0;
 	else if (rdempty)
 		last <= 1'b1;
@@ -136,7 +132,7 @@ assign line_next = arb.ack;
 always_ff @(posedge clkSYS)
 	done <= line_done && last;
 
-assign aclr = ~n_reset;
+assign aclr = ~n_reset || state == Idle;
 
 always_ff @(posedge clkSYS)
 begin

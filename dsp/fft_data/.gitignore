@@ -1,4 +1,6 @@
 exp
 window_bh
+rom_exp
 *.o
 *.sv
+*.mif
