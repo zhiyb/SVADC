@@ -121,6 +121,15 @@ logic tft_pwm;
 assign GPIO_0[24] = tft_pwm;
 assign tft_pwm = n_reset;
 
+// Amplifier
+logic amp_sd;
+logic [3:0] amp_d;
+assign GPIO_1[28] = amp_sd;
+assign {GPIO_1[22], GPIO_1[20], GPIO_1[26], GPIO_1[24]} = amp_d;
+
+assign amp_sd = 1'b0;
+assign amp_d = SW;
+
 // ADC
 logic [9:0] adc_data;
 adc #(10) adc0 (clkADC, n_reset, adc_data, GPIO_1[18],

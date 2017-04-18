@@ -138,7 +138,11 @@ logic ram_out_wren;
 ram_fft ram1 (ram_out_addr[0], ram_out_addr[1], clk, ram_out_d[0], ram_out_d[1],
 	ram_out_wren, ram_out_wren, ram_out[0], ram_out[1]);
 
+logic [SIZEN:0] revaddr[2];
+assign revaddr = '{{rev, 1'b0}, {rev, 1'b1}};
+
 assign ram_out_wren = ~active;
+assign ram_out_addr = active ? revaddr : wraddr;
 
 logic [2:0] swap;
 logic delay_latch;
@@ -147,10 +151,9 @@ begin
 	swap <= {swap[1:0], dir};
 	delay_latch <= delay;
 	active <= reload;
-	ram_out_addr <= rdaddr;
-	valid <= active && ~delay_latch;
 end
 
-assign out = '{ram_out[swap[1]][0 +: RN], ram_out[swap[1]][RN +: RN]};
+assign valid = active && ~delay_latch;
+assign out = '{ram_out[swap[0]][0 +: RN], ram_out[swap[0]][RN +: RN]};
 
 endmodule

@@ -22,12 +22,10 @@ fifo_samples_sparse fifo0 (aclr, fifo_d,
 	clkSYS, ~rdempty && rdreq, clkSmpl, ~wrfull && wrreq,
 	fifo, rdempty, rdfull, wrempty, wrfull);
 
-assign fifo_d = smpl >= 16'h0200 ? 16'h0200 + (smpl >> 5) : smpl;
+assign fifo_d = smpl >= 16'h0100 ? 16'h0100 + (smpl >> 6) : smpl;
 
 always_ff @(posedge clkSmpl, negedge n_reset)
 	if (~n_reset)
-		smpl_req <= 1'b0;
-	else if (aclr)
 		smpl_req <= 1'b0;
 	else if (wrempty)
 		smpl_req <= 1'b1;
@@ -69,7 +67,7 @@ always_ff @(posedge clkSYS, negedge n_reset)
 	if (~n_reset)
 		y[1] <= 0;
 	else
-		y[1] <= (H - 1) - fifo * H / 1024;
+		y[1] <= (H - 1) - fifo;// * H / 1024;
 
 always_ff @(posedge clkSYS)
 	if (rdreq)
@@ -134,7 +132,7 @@ assign line_next = arb.ack;
 always_ff @(posedge clkSYS)
 	done <= line_done && last;
 
-assign aclr = ~n_reset || state == Idle;
+assign aclr = ~n_reset;
 
 always_ff @(posedge clkSYS)
 begin
