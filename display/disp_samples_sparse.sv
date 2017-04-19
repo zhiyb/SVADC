@@ -1,4 +1,4 @@
-module disp_samples_sparse #(parameter AN, DN, FFTN, BASE, SWAP, SIZE, W, H) (
+module disp_samples_sparse #(parameter AN, DN, SN, BASE, SWAP, SIZE, W, H) (
 	input logic clkSYS, clkSmpl, n_reset,
 	input logic start,
 	output logic done,
@@ -12,7 +12,7 @@ module disp_samples_sparse #(parameter AN, DN, FFTN, BASE, SWAP, SIZE, W, H) (
 	// Sample data input
 	input logic smpl_valid,
 	output logic smpl_req,
-	input logic [FFTN - 1:0] smpl
+	input logic [SN - 1:0] smpl
 );
 
 logic aclr, rdreq, wrreq;
@@ -22,13 +22,13 @@ fifo_samples_sparse fifo0 (aclr, fifo_d,
 	clkSYS, ~rdempty && rdreq, clkSmpl, ~wrfull && wrreq,
 	fifo, rdempty, rdfull, wrempty, wrfull);
 
-function logic [FFTN - 1:0] ramp(input logic [FFTN - 1:0] d);
-	logic [FFTN * 2 - 1:0] n;
-	n = d ^ {FFTN{1'b1}};
-	ramp = ~((n ** 2) >> FFTN);
+function logic [SN - 1:0] ramp(input logic [SN - 1:0] d);
+	logic [SN * 2 - 1:0] n;
+	n = d ^ {SN{1'b1}};
+	ramp = ~((n ** 2) >> SN);
 endfunction
 
-assign fifo_d = ramp(ramp(smpl)) >> 7;
+assign fifo_d = ramp(ramp(ramp(smpl))) >> 7;
 
 always_ff @(posedge clkSmpl, negedge n_reset)
 	if (~n_reset)
