@@ -60,6 +60,7 @@ set_global_assignment -name OPTIMIZATION_MODE "AGGRESSIVE PERFORMANCE"
 set_global_assignment -name AUTO_DELAY_CHAINS_FOR_HIGH_FANOUT_INPUT_PINS ON
 
 set_global_assignment -name QII_AUTO_PACKED_REGISTERS AUTO
+set_global_assignment -name SYSTEMVERILOG_FILE fm/fm_mixer.sv
 set_global_assignment -name SYSTEMVERILOG_FILE display/disp_samples_sparse.sv
 set_global_assignment -name SYSTEMVERILOG_FILE dsp/fft_dit2.sv
 set_global_assignment -name SYSTEMVERILOG_FILE dsp/fft.sv
@@ -93,5 +94,6 @@ set_global_assignment -name QIP_FILE display/fifo_samples.qip
 set_global_assignment -name QIP_FILE display/fifo_samples_sparse.qip
 set_global_assignment -name QIP_FILE dsp/ram_fft.qip
 set_global_assignment -name QIP_FILE dsp/rom_exp.qip
-set_global_assignment -name SLD_FILE db/tap_auto_stripped.stp
+set_global_assignment -name QIP_FILE fm/rom_fm_exp.qip
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_global_assignment -name SLD_FILE db/tap_auto_stripped.stp

@@ -3,9 +3,16 @@ module wavegen_sin #(parameter N = 4, SN = 5) (
 	output logic pwm
 );
 
+localparam ROM_AN = 5, ROM_DN = 4;
+logic [ROM_AN - 1:0] rom_addr;
+logic [ROM_DN - 1:0] rom_data;
+rom_sin_4_5 rom0 (rom_addr, clk, rom_data);
+
 logic [SN - 1:0] addr;
+assign rom_addr = {addr, {ROM_AN - SN{1'b0}}};
+
 logic [N - 1:0] rom;
-rom_sin_4_5 rom0 (addr, clk, rom);
+assign rom = rom_data[ROM_DN - 1 -: N];
 
 logic [N - 1:0] cnt;
 always_ff @(posedge clk, negedge n_reset)

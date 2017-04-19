@@ -1,4 +1,4 @@
-module disp_samples_sparse #(parameter AN, DN, BASE, SWAP, SIZE, W, H) (
+module disp_samples_sparse #(parameter AN, DN, FFTN, BASE, SWAP, SIZE, W, H) (
 	input logic clkSYS, clkSmpl, n_reset,
 	input logic start,
 	output logic done,
@@ -12,7 +12,7 @@ module disp_samples_sparse #(parameter AN, DN, BASE, SWAP, SIZE, W, H) (
 	// Sample data input
 	input logic smpl_valid,
 	output logic smpl_req,
-	input logic [15:0] smpl
+	input logic [FFTN - 1:0] smpl
 );
 
 logic aclr, rdreq, wrreq;
@@ -22,10 +22,18 @@ fifo_samples_sparse fifo0 (aclr, fifo_d,
 	clkSYS, ~rdempty && rdreq, clkSmpl, ~wrfull && wrreq,
 	fifo, rdempty, rdfull, wrempty, wrfull);
 
-assign fifo_d = smpl >= 16'h0100 ? 16'h0100 + (smpl >> 6) : smpl;
+function logic [FFTN - 1:0] ramp(input logic [FFTN - 1:0] d);
+	logic [FFTN * 2 - 1:0] n;
+	n = d ^ {FFTN{1'b1}};
+	ramp = ~((n ** 2) >> FFTN);
+endfunction
+
+assign fifo_d = ramp(ramp(smpl)) >> 7;
 
 always_ff @(posedge clkSmpl, negedge n_reset)
 	if (~n_reset)
+		smpl_req <= 1'b0;
+	else if (aclr)
 		smpl_req <= 1'b0;
 	else if (wrempty)
 		smpl_req <= 1'b1;
@@ -67,7 +75,7 @@ always_ff @(posedge clkSYS, negedge n_reset)
 	if (~n_reset)
 		y[1] <= 0;
 	else
-		y[1] <= (H - 1) - fifo;// * H / 1024;
+		y[1] <= (H - 1) - fifo * H / 1024;
 
 always_ff @(posedge clkSYS)
 	if (rdreq)
@@ -132,7 +140,8 @@ assign line_next = arb.ack;
 always_ff @(posedge clkSYS)
 	done <= line_done && last;
 
-assign aclr = ~n_reset;
+always_ff @(posedge clkSYS)
+	aclr <= ~n_reset || (x[1] == (SIZE - 1) * ((W - 1) / (SIZE - 1)));
 
 always_ff @(posedge clkSYS)
 begin

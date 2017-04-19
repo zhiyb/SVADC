@@ -1,4 +1,4 @@
-module display #(parameter AN, DN, BASE, SWAP, FFT,
+module display #(parameter AN, DN, FFTN, BASE, SWAP, FFT,
 `ifdef MODEL_TECH
 	W = 64, H = 4
 `else
@@ -11,7 +11,7 @@ module display #(parameter AN, DN, BASE, SWAP, FFT,
 	input logic [9:0] smpl,
 	input logic fft_valid,
 	output logic fft_req,
-	input logic [15:0] fft,
+	input logic [FFTN - 1:0] fft,
 
 	// Display buffer swap
 	output logic swap,
@@ -34,7 +34,7 @@ arbiter_if #(AN, DN, 2) arb[4] ();
 arbiter_sync_pri #(AN, DN, 2) arb0 (clkSYS, n_reset, mem, 2'h0, arb);
 
 logic fft_start, fft_done;
-disp_samples_sparse #(AN, DN, BASE, SWAP, FFT, W, H) fft0 (
+disp_samples_sparse #(AN, DN, FFTN, BASE, SWAP, FFT, W, H) fft0 (
 	clkSYS, clkSmpl, n_reset,
 	fft_start, fft_done, ~stat, arb[0], fft_valid, fft_req, fft);
 
@@ -42,9 +42,13 @@ logic smpl_start, smpl_done;
 disp_samples #(AN, DN, BASE, SWAP, W, H) smpl0 (clkSYS, clkSmpl, n_reset,
 	smpl_start, smpl_done, ~stat, arb[1], smpl);
 
+`ifdef TEST
 logic test_start, test_done;
 disp_test_lines #(AN, DN, BASE, SWAP, W, H) test0 (clkSYS, n_reset,
 	test_start, test_done, ~stat, arb[2]);
+`else
+assign arb[2].req = 1'b0;
+`endif
 
 logic bg_start, bg_done;
 disp_background #(AN, DN, BASE, SWAP, W, H) bg0 (clkSYS, n_reset,
@@ -82,7 +86,9 @@ always_ff @(posedge clkSYS, negedge n_reset)
 always_ff @(posedge clkSYS, negedge n_reset)
 	if (~n_reset) begin
 		bg_start <= 1'b0;
+`ifdef TEST
 		test_start <= 1'b0;
+`endif
 		smpl_start <= 1'b0;
 	end else begin
 		bg_start <= state == Swap && swap_done;

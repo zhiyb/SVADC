@@ -55,6 +55,8 @@ assign {GPIO_1[32], GPIO_1[30], GPIO_1[31], GPIO_1[29], GPIO_1[33],
 	$rtoi(($sin(4.0 * $acos(0.0) * $itor(cnt[8:0]) / 512.0)
 		+ 1.0) * (2.0 ** 9.0));
 
+assign SW = 4'hf;
+
 always_ff @(posedge DRAM_CLK, negedge KEY[0])
 	if (~KEY[0])
 		cnt <= 16'h0;

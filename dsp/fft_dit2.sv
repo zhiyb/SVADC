@@ -6,7 +6,7 @@ module fft_dit2 #(parameter SIZE, RN, FRAC) (
 	output logic [RN - 1:0] out[2]
 );
 
-localparam RAM_AN = 10, RAM_DN = 32;
+localparam RAM_AN = 10, RAM_DN = 36;
 localparam ROM_AN = 9, ROM_DN = 14;
 
 logic [ROM_AN - 1:0] eaddr;
