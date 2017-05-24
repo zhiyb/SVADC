@@ -1,8 +1,8 @@
 module fm_mixer #(parameter N) (
 	input logic clk, n_reset,
 
-	input logic [N - 1:0] in,
-	output logic [N - 1:0] out[2]
+	input logic signed [N - 1:0] in,
+	output logic signed [N - 1:0] out[2]
 );
 
 logic [9:0] addr;
@@ -18,7 +18,7 @@ always_ff @(posedge clk, negedge n_reset)
 		addr <= addr + 1;
 
 logic signed [N - 1:0] data;
-assign data = {~in[N - 1], in[N - 2:0]};
+assign data = in;
 
 logic signed [N - 1:0] exp[2];
 assign {exp[1], exp[0]} = rom;

@@ -8,14 +8,14 @@ fs = 80 * 1000 * 1000;
 % Simulation time
 tsim = 1000 / 1000 / 1000;
 % Input precision
-prec = 100;
+prec = 10;
 
 % Timebase
 step = 1 / fs / prec;
 ti = 0 : step : tsim - step;
 % Input message signal
 xm = zeros(size(ti));
-for i = 0 : 200
+for i = 1 : 200
     xm = xm + cos(2 * pi * fb * i * ti);
 end
 xn = 2 * randn(size(ti)) / max(abs(xm));
@@ -51,7 +51,7 @@ w = 0.42 + 0.5 * cos(2 * pi * 1 * n / (M + 1)) + 0.08 * cos(2 * pi * 2 * n / (M 
 % FIR coefficients
 hs = sin(w0 * n) ./ (pi * n);
 hs(M / 2 + 1) = w0 / pi;
-hs = hs / (w0 / pi) / 8;
+hs = hs / (w0 / pi) / 1.05;
 h = hs .* w;
 % FIR output
 v1 = cconv(ue, h, length(ue));
@@ -83,11 +83,12 @@ for i1 = taps + 1:length(u) / P + 1
 end
 to = downsample(t, P);
 
-figure(3);
+figure(4);
 clf;
 hold on
 for i = 1:taps
     plot(real(hsum(i, :)));
+    plot(imag(hsum(i, :)));
 end
 
 % Plotting
@@ -105,6 +106,7 @@ xlabel('time (s)');
 
 figure(2);
 clf;
+L = length(v1);
 f = fs * (0:(L/2))/L;
 Pv = fftout(v1);
 Pvp = fftout(upsample(vp(2:length(vp)), P) * P);
@@ -126,10 +128,10 @@ legend('polyphase');
 linkaxes(ax, 'x');
 xlabel('frequency (Hz)');
 
-% figure(3);
-% clf;
-% hold on;
-% plot(n, h);
-% plot(n, hs);
-% plot(n, w);
-% legend('h', 'hs', 'w');
+figure(3);
+clf;
+hold on;
+plot(n, h);
+plot(n, hs);
+plot(n, w);
+legend('h', 'hs', 'w');

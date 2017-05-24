@@ -137,42 +137,56 @@ adc #(10) adc0 (clkADC, n_reset, adc_data, GPIO_1[18],
 	{GPIO_1[32], GPIO_1[30], GPIO_1[31], GPIO_1[29], GPIO_1[33],
 	GPIO_1[27], GPIO_1[25], GPIO_1[19], GPIO_1[23], GPIO_1[21]});
 
+logic [ADCN - 1:0] adc_sdata;
+assign adc_sdata = {~adc_data[ADCN - 1], adc_data[ADCN - 2:0]};
+
+logic sw;
+always_ff @(posedge clkADC)
+	sw <= ~SW[0];
+
 // FM mixer
-logic [ADCN - 1:0] fm[2];
-fm_mixer #(10) mix0 (clkADC, n_reset, adc_data, fm);
+logic clkFM;
+logic [ADCN - 1:0] fmmix[2], fmin[2], fm[2];
+fm_mixer #(10) mix0 (clkADC, n_reset, adc_sdata, fmmix);
+fm_chfltr #(10) (clkADC, n_reset, fmin, clkFM, fm);
+assign fmin[0] = sw ? fmmix[0] : adc_sdata;
+assign fmin[1] = sw ? fmmix[1] : 0;
 
 // Sample display
-logic clkSmpl;
-assign clkSmpl = clkADC;
+logic clkSmpl[2];
+assign clkSmpl[0] = clkADC;
+assign clkSmpl[1] = clkFM;
 
-logic [ADCN - 1:0] smpl[2];
-assign smpl[0] = SW[0] ? fm[0] : {~adc_data[ADCN - 1], adc_data[ADCN - 2:0]};
-assign smpl[1] = SW[0] ? fm[1] : 0;
+logic [ADCN - 1:0] smpl[2][2];
+assign smpl[0] = fmin;
+assign smpl[1] = fm;
 
-logic [ADCN - 1:0] waveform;
-always_ff @(posedge clkSmpl)
-	waveform <= {~smpl[0][ADCN - 1], smpl[0][ADCN - 2:0]};
+logic [ADCN - 1:0] waveform[2];
+always_ff @(posedge clkSmpl[0])
+	waveform[0] <= {~smpl[0][0][ADCN - 1], smpl[0][0][ADCN - 2:0]};
+always_ff @(posedge clkSmpl[1])
+	waveform[1] <= {~smpl[1][0][ADCN - 1], smpl[1][0][ADCN - 2:0]};
 
 // FFT
 localparam FFTN = 18, FFT_SIZE = 512;
 logic fft_start, fft_valid;
 logic [FFTN - 1:0] fft_data;
 `ifdef MODEL_TECH
-fft #(ADCN, FFTN, 5, FFT_SIZE) fft0 (clkSmpl, n_reset,
-	smpl, fft_valid, fft_start, fft_data);
+fft #(ADCN, FFTN, 5, FFT_SIZE) fft0 (clkSmpl[1], n_reset,
+	smpl[1], fft_valid, fft_start, fft_data);
 `else
-fft #(ADCN, FFTN, 5, FFT_SIZE) fft0 (clkSmpl, n_reset,
-	smpl, fft_valid, fft_start, fft_data);
+fft #(ADCN, FFTN, 5, FFT_SIZE) fft0 (clkSmpl[1], n_reset,
+	smpl[1], fft_valid, fft_start, fft_data);
 `endif
 
 // Waveform display
 display #(AN, DN, FFTN, tft_base, tft_swap,
-	FFT_SIZE > 800 ? 800 : FFT_SIZE) disp0 (clkSYS, clkSmpl, n_reset,
-	waveform, fft_valid, fft_start, fft_data,
+	FFT_SIZE > 800 ? 800 : FFT_SIZE) disp0 (clkSYS, clkSmpl[0], clkSmpl[1],
+	n_reset, waveform[0], waveform[1], fft_valid, fft_start, fft_data,
 	disp_swap, disp_stat, `disp);
 
 // Waveform generator
-wavegen_sin #(4, 4) wave0 (clk80M, n_reset, GPIO_1[0]);
+wavegen_sin #(4, 5) wave0 (clk80M, n_reset, GPIO_1[0]);
 
 // Debugging LEDs
 assign LED[7:0] = {clk, adc_data[9:4]};

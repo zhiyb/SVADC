@@ -1,4 +1,5 @@
-module disp_samples #(parameter AN, DN, BASE, SWAP, W, H) (
+module disp_samples #(parameter AN, DN, BASE, SWAP, W, H,
+	logic [15:0] COLOUR = 16'hffff) (
 	input logic clkSYS, clkSmpl, n_reset,
 	input logic start,
 	output logic done,
@@ -104,8 +105,8 @@ assign aclr = ~n_reset || done;
 always_ff @(posedge clkSYS)
 begin
 	arb.addr <= (stat ? SWAP : BASE) | (y * W + x);
-	arb.data <= {~y[8:4], 6'h0, y[8:4]};
-	//arb.data <= {fifo[9:5], fifo[5:0], ~fifo[9:5]};
+	arb.data <= COLOUR;
+	//arb.data <= {~y[8:4], GREEN, y[8:4]};
 end
 
 //assign arb.data = 16'h667f;

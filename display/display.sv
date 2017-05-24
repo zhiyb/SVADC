@@ -5,10 +5,10 @@ module display #(parameter AN, DN, FFTN, BASE, SWAP, FFT,
 	W = 800, H = 480
 `endif
 ) (
-	input logic clkSYS, clkSmpl, n_reset,
+	input logic clkSYS, clkRAW, clkSmpl, n_reset,
 
 	// Data samples and FFT
-	input logic [9:0] smpl,
+	input logic [9:0] raw, smpl,
 	input logic fft_valid,
 	output logic fft_req,
 	input logic [FFTN - 1:0] fft,
@@ -39,16 +39,12 @@ disp_samples_sparse #(AN, DN, FFTN, BASE, SWAP, FFT, W, H) fft0 (
 	fft_start, fft_done, ~stat, arb[0], fft_valid, fft_req, fft);
 
 logic smpl_start, smpl_done;
-disp_samples #(AN, DN, BASE, SWAP, W, H) smpl0 (clkSYS, clkSmpl, n_reset,
-	smpl_start, smpl_done, ~stat, arb[1], smpl);
+disp_samples #(AN, DN, BASE, SWAP, W, H, 16'h07e0) smpl0 (clkSYS, clkSmpl,
+	n_reset, smpl_start, smpl_done, ~stat, arb[1], smpl);
 
-`ifdef TEST
-logic test_start, test_done;
-disp_test_lines #(AN, DN, BASE, SWAP, W, H) test0 (clkSYS, n_reset,
-	test_start, test_done, ~stat, arb[2]);
-`else
-assign arb[2].req = 1'b0;
-`endif
+logic raw_start, raw_done;
+disp_samples #(AN, DN, BASE, SWAP, W, H, 16'hf800) smpl1 (clkSYS, clkRAW,
+	n_reset, raw_start, raw_done, ~stat, arb[2], raw);
 
 logic bg_start, bg_done;
 disp_background #(AN, DN, BASE, SWAP, W, H) bg0 (clkSYS, n_reset,
@@ -57,7 +53,7 @@ disp_background #(AN, DN, BASE, SWAP, W, H) bg0 (clkSYS, n_reset,
 logic swap_start, swap_done;
 disp_swap swap0 (clkSYS, n_reset, swap_start, swap_done, stat, swap);
 
-enum int unsigned {Swap, Background, Test, Samples, FFTDisp} state;
+enum int unsigned {Swap, Background, Raw, Samples, FFTDisp} state;
 always_ff @(posedge clkSYS, negedge n_reset)
 	if (~n_reset)
 		state <= Swap;
@@ -66,16 +62,12 @@ always_ff @(posedge clkSYS, negedge n_reset)
 			state <= Background;
 	end else if (state == Background) begin
 		if (bg_done)
-`ifndef MODEL_TECH
-`ifdef TEST
-			state <= Test;
-	end else if (state == Test) begin
-		if (test_done)
-`endif
+			state <= Raw;
+	end else if (state == Raw) begin
+		if (raw_done)
 			state <= Samples;
 	end else if (state == Samples) begin
 		if (smpl_done)
-`endif
 			state <= FFTDisp;
 	end else if (state == FFTDisp) begin
 		if (fft_done)
@@ -86,23 +78,12 @@ always_ff @(posedge clkSYS, negedge n_reset)
 always_ff @(posedge clkSYS, negedge n_reset)
 	if (~n_reset) begin
 		bg_start <= 1'b0;
-`ifdef TEST
-		test_start <= 1'b0;
-`endif
 		smpl_start <= 1'b0;
 	end else begin
 		bg_start <= state == Swap && swap_done;
-`ifdef TEST
-		test_start <= state == Background && bg_done;
-		smpl_start <= state == Test && test_done;
-`else
-		smpl_start <= state == Background && bg_done;
-`endif
-`ifdef MODEL_TECH
-		fft_start <= state == Background && bg_done;
-`else
+		raw_start <= state == Background && bg_done;
+		smpl_start <= state == Raw && raw_done;
 		fft_start <= state == Samples && smpl_done;
-`endif
 	end
 
 assign swap_start = state == FFTDisp && fft_done;
