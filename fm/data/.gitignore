@@ -1,5 +1,7 @@
 rom_exp
 rom_chfltr
+diffcoeff
 *.o
 *.mif
 *.ver
+*.sv

@@ -60,6 +60,8 @@ set_global_assignment -name OPTIMIZATION_MODE "AGGRESSIVE PERFORMANCE"
 set_global_assignment -name AUTO_DELAY_CHAINS_FOR_HIGH_FANOUT_INPUT_PINS ON
 
 set_global_assignment -name QII_AUTO_PACKED_REGISTERS AUTO
+set_global_assignment -name SYSTEMVERILOG_FILE fm/fm_diff.sv
+set_global_assignment -name SYSTEMVERILOG_FILE fm/fm.sv
 set_global_assignment -name SYSTEMVERILOG_FILE fm/fm_chfltr.sv
 set_global_assignment -name SYSTEMVERILOG_FILE fm/fm_mixer.sv
 set_global_assignment -name SYSTEMVERILOG_FILE display/disp_samples_sparse.sv

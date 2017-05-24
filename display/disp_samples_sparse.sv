@@ -28,7 +28,7 @@ function logic [SN - 1:0] ramp(input logic [SN - 1:0] d);
 	ramp = ~((n ** 2) >> SN);
 endfunction
 
-assign fifo_d = ramp(ramp(ramp(smpl))) >> 7;
+assign fifo_d = ramp(ramp(ramp(smpl))) >> 5;
 
 always_ff @(posedge clkSmpl, negedge n_reset)
 	if (~n_reset)

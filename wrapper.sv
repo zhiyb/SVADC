@@ -137,28 +137,25 @@ adc #(10) adc0 (clkADC, n_reset, adc_data, GPIO_1[18],
 	{GPIO_1[32], GPIO_1[30], GPIO_1[31], GPIO_1[29], GPIO_1[33],
 	GPIO_1[27], GPIO_1[25], GPIO_1[19], GPIO_1[23], GPIO_1[21]});
 
-logic [ADCN - 1:0] adc_sdata;
+logic signed [ADCN - 1:0] adc_sdata;
 assign adc_sdata = {~adc_data[ADCN - 1], adc_data[ADCN - 2:0]};
 
 logic sw;
 always_ff @(posedge clkADC)
 	sw <= ~SW[0];
 
-// FM mixer
+// FM receiver
 logic clkFM;
-logic [ADCN - 1:0] fmmix[2], fmin[2], fm[2];
-fm_mixer #(10) mix0 (clkADC, n_reset, adc_sdata, fmmix);
-fm_chfltr #(10) (clkADC, n_reset, fmin, clkFM, fm);
-assign fmin[0] = sw ? fmmix[0] : adc_sdata;
-assign fmin[1] = sw ? fmmix[1] : 0;
+logic signed [ADCN - 1:0] fm[2];
+fm #(ADCN) fm0 (clkADC, n_reset, adc_sdata, clkFM, fm);
 
 // Sample display
 logic clkSmpl[2];
 assign clkSmpl[0] = clkADC;
 assign clkSmpl[1] = clkFM;
 
-logic [ADCN - 1:0] smpl[2][2];
-assign smpl[0] = fmin;
+logic signed [ADCN - 1:0] smpl[2][2];
+assign smpl[0][0] = adc_sdata;
 assign smpl[1] = fm;
 
 logic [ADCN - 1:0] waveform[2];
